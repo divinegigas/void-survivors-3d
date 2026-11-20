@@ -1,0 +1,104 @@
+# Builds Void Survivors 3D for Windows and Linux on every push, and publishes them.
+#
+#  - Every push: the builds appear under the run's "Artifacts" (Actions tab).
+#  - Every push to a branch: the "Latest build" pre-release on the Releases page is replaced
+#    with the new build (so the newest version is always one click away).
+#  - Push a tag like v0.1.0: a proper release with that name is published.
+#
+# Nobody has to build by hand. To change the Godot version, edit GODOT_VERSION.
+name: Build
+
+on:
+  push:
+    branches: ["**"]
+    tags: ["v*"]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+env:
+  GODOT_VERSION: "4.7.2"
+
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Cache Godot and export templates
+        id: cache
+        uses: actions/cache@v4
+        with:
+          path: ~/godot-cache
+          key: godot-${{ env.GODOT_VERSION }}
+
+      - name: Download Godot ${{ env.GODOT_VERSION }}
+        if: steps.cache.outputs.cache-hit != 'true'
+        run: |
+          mkdir -p ~/godot-cache
+          cd ~/godot-cache
+          base="https://github.com/godotengine/godot/releases/download/${GODOT_VERSION}-stable"
+          curl -fsSL -o godot.zip "$base/Godot_v${GODOT_VERSION}-stable_linux.x86_64.zip"
+          curl -fsSL -o templates.tpz "$base/Godot_v${GODOT_VERSION}-stable_export_templates.tpz"
+          unzip -q godot.zip && rm godot.zip
+          unzip -q templates.tpz && rm templates.tpz
+
+      - name: Install Godot
+        run: |
+          mkdir -p ~/.local/share/godot/export_templates
+          rm -rf ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          cp -r ~/godot-cache/templates ~/.local/share/godot/export_templates/${GODOT_VERSION}.stable
+          echo "GODOT=$HOME/godot-cache/Godot_v${GODOT_VERSION}-stable_linux.x86_64" >> $GITHUB_ENV
+
+      - name: Import the project
+        run: $GODOT --headless --import --path . || true
+
+      - name: Smoke test (a robot pilot plays 2 minutes)
+        run: |
+          $GODOT --headless --path . -- --autotest=120 2>&1 | tee autotest.log
+          grep -q "AUTOTEST done" autotest.log
+          ! grep -q "SCRIPT ERROR" autotest.log
+
+      - name: Export Linux and Windows
+        run: |
+          mkdir -p build/linux build/windows
+          $GODOT --headless --path . --export-release "Linux" build/linux/VoidSurvivors3D.x86_64 2>&1 | tee export.log
+          $GODOT --headless --path . --export-release "Windows" build/windows/VoidSurvivors3D.exe 2>&1 | tee -a export.log
+          test -s build/linux/VoidSurvivors3D.x86_64
+          test -s build/windows/VoidSurvivors3D.exe
+          chmod +x build/linux/VoidSurvivors3D.x86_64
+
+      - name: Package
+        run: |
+          short=$(git rev-parse --short HEAD)
+          echo "SHORT=$short" >> $GITHUB_ENV
+          cp fonts/OFL-*.txt build/linux/ && cp fonts/OFL-*.txt build/windows/
+          (cd build/linux && tar czf ../VoidSurvivors3D-linux.tar.gz *)
+          (cd build/windows && zip -q -r ../VoidSurvivors3D-windows.zip .)
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: VoidSurvivors3D-${{ env.SHORT }}
+          path: |
+            build/VoidSurvivors3D-linux.tar.gz
+            build/VoidSurvivors3D-windows.zip
+
+      - name: Publish "Latest build"
+        if: github.ref_type == 'branch'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release delete latest --yes --cleanup-tag || true
+          gh release create latest build/VoidSurvivors3D-linux.tar.gz build/VoidSurvivors3D-windows.zip \
+            --prerelease --title "Latest build ($SHORT, $GITHUB_REF_NAME)" --target "$GITHUB_SHA" \
+            --notes "Automatic build of the newest commit. Download the file for your system, unpack it and run VoidSurvivors3D."
+
+      - name: Publish tagged release
+        if: startsWith(github.ref, 'refs/tags/v')
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release create "$GITHUB_REF_NAME" build/VoidSurvivors3D-linux.tar.gz build/VoidSurvivors3D-windows.zip \
+            --title "Void Survivors 3D $GITHUB_REF_NAME" --generate-notes
