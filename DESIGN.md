@@ -330,3 +330,21 @@ The **systems, numbers, content and tone stay the same.** What changes is the ca
   in the UI.
 - **Audio:** the same five tracks and sound design; port the synth approach, or render the stems.
 - **Platforms:** Windows and Linux (Fedora first), exported by GitHub Actions.
+
+### 14.1 3D numbers (milestone 1)
+
+These are new for the 3D game and live in `scripts/tuning.gd` (marked **[3D]**). Everything else uses
+the Android numbers unchanged.
+
+- **Scale:** 1 game unit = 0.05 m, so the 360-wide box is 18 m. The box is 360 × 220 units.
+- **Depth:** enemies appear 900 units ahead. Android "falling" speeds × 1.4 become the speed toward
+  you, so a Larva takes about 7 s to reach you. They only fire while 90–720 units ahead.
+- **Gems** stream toward you at 110 units/s (Android: they fall at 55). The magnet works sideways in
+  the plane (34 × pickup) and reaches 3 magnet radii ahead.
+- **Aim assist:** forward guns bend toward the enemy nearest straight ahead within a 5° cone. The
+  reticle turns gold when it's locked on.
+- **Steering:** the mouse is captured and moves an aim point (1.3 box heights per screen height), and
+  keyboard and stick move it at 340 units/s. The ship chases the aim point at its handling speed,
+  as on Android.
+- **Readability:** enemy bullets, gems, your hitbox and the reticle are drawn on top of everything,
+  and far bullets never shrink below a minimum size on screen.
