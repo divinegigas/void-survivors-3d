@@ -1,0 +1,37 @@
+; Engine configuration file.
+; Open this folder in Godot 4 (Import > select this file) to work on the game.
+
+config_version=5
+
+[application]
+
+config/name="Void Survivors 3D"
+config/description="An on-rails 3D space shooter with survivor-style level-ups."
+run/main_scene="res://scenes/main.tscn"
+config/features=PackedStringArray("4.7", "GL Compatibility")
+config/icon="res://icon.svg"
+
+[autoload]
+
+CFG="*res://scripts/tuning.gd"
+Controls="*res://scripts/controls.gd"
+
+[display]
+
+window/size/viewport_width=1920
+window/size/viewport_height=1080
+window/size/window_width_override=1600
+window/size/window_height_override=900
+window/stretch/mode="canvas_items"
+window/stretch/aspect="expand"
+
+[gui]
+
+theme/custom_font="res://fonts/ComicNeue-Bold.ttf"
+
+[rendering]
+
+renderer/rendering_method="gl_compatibility"
+renderer/rendering_method.mobile="gl_compatibility"
+anti_aliasing/quality/msaa_3d=2
+environment/defaults/default_clear_color=Color(0.113725, 0.0862745, 0.282353, 1)
