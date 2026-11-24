@@ -7,6 +7,8 @@ five-stage campaign.
 
 - **`DESIGN.md`** is the full design: every system, with real numbers. It's shared with the Android
   game (repository `void-survivors-`). §14 covers the 3D adaptation.
+- **`UPDATE-LOG.md`** lists every change the Android game got after this project started (new numbers, new
+  systems) and how each fits the 3D game. Read it alongside `DESIGN.md`.
 - **`scripts/tuning.gd`** is the tuning block: every gameplay number in one file (like `CFG` in the
   Android game).
 - Platforms: Windows and Linux (Fedora first).
